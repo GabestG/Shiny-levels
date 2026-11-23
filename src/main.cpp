@@ -5,10 +5,12 @@ using namespace std;
 
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/modify/GameObject.hpp>
+#include <Geode/modify/CCSprite.hpp>
+#include <Geode/modify/GJGroundLayer.hpp>
 #include <cstdlib>
 
 bool shinyLevel = false;
-float hueShift = 50;
+float hueShift = 200;
 
 ccColor3B shiftHue(ccColor3B color){
 	float r = color.r / 255.f;
@@ -67,21 +69,83 @@ ccColor3B shiftHue(ccColor3B color){
 }
 
 class $modify(MyGameObject, GameObject) {
-    void setObjectColor(const ccColor3B& color) {
+	void setObjectColor(ccColor3B const& color) {
 		if (shinyLevel == true){
 			GameObject::setObjectColor(shiftHue(color));
-		}else{
-			GameObject::setObjectColor(color);
+			return;
 		}
-    }
-
-    void setGlowColor(const ccColor3B& color) {
+		GameObject::setObjectColor(color);
+	}
+    void setChildColor(const ccColor3B& color) {
 		if (shinyLevel == true){
-			GameObject::setGlowColor(shiftHue(color));
-		}else{
-			GameObject::setGlowColor(color);
+			GameObject::setChildColor(shiftHue(color));
+			return;
 		}
+		GameObject::setChildColor(color);
     }
+};
+
+class $modify(MyCCSprite, CCSprite){
+
+	bool changeGrounds(auto groundLayer, const ccColor3B& color){
+		if (!groundLayer) return false;
+
+        auto ground1 = groundLayer->m_ground1Sprite;
+        auto ground2 = groundLayer->m_ground2Sprite;
+		auto line = groundLayer->m_lineSprite;
+
+		if (line == this){
+			CCSprite::setColor(shiftHue(color));
+			return true;
+		}
+        if (ground1 && ground1->getChildren()) {
+            for (int i = 0; i < ground1->getChildren()->count(); i++) {
+                if (ground1->getChildren()->objectAtIndex(i) == this) {
+                    CCSprite::setColor(shiftHue(color));
+                    return true;
+                }
+            }
+        }
+        if (ground2 && ground2->getChildren()) {
+            for (int i = 0; i < ground2->getChildren()->count(); i++) {
+                if (ground2->getChildren()->objectAtIndex(i) == this) {
+                    CCSprite::setColor(shiftHue(color));
+                    return true;
+                }
+            }
+        }
+		return false;
+	}
+
+	void setColor(const ccColor3B& color){
+		auto baseLayer = GJBaseGameLayer::get();
+
+		if (!shinyLevel || !baseLayer){
+			CCSprite::setColor(color);
+			return;
+		}
+
+		if (baseLayer->m_background == this){
+			CCSprite::setColor(shiftHue(color));
+			return;
+		}
+
+		if (changeGrounds(baseLayer->m_groundLayer, color)) return;
+		if (changeGrounds(baseLayer->m_groundLayer2, color)) return;
+
+		auto middleGround = baseLayer->m_middleground;
+		
+		if (middleGround){
+			auto mg1 = middleGround->m_ground1Sprite;
+			auto mg2 = middleGround->m_ground2Sprite;
+
+			if (mg1 == this || mg2 == this){
+				CCSprite::setColor(shiftHue(color));
+				return;
+			}
+		}
+		CCSprite::setColor(color);
+	}
 };
 
 class $modify(MyPlayLayer, PlayLayer){
@@ -108,5 +172,9 @@ class $modify(MyPlayLayer, PlayLayer){
 	void resetLevel() {
 		PlayLayer::resetLevel();
 		ShinyRandomizer();
+	}
+	void onQuit() {
+		PlayLayer::onQuit();
+		shinyLevel = false;
 	}
 };
