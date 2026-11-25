@@ -185,14 +185,14 @@ class $modify(PlayLayer){
 class $modify(EndLevelLayer) {
 
 	void setSpriteTexture(const char* id){
-		auto sprite = typeinfo_cast<CCSprite*>(this->getChildByIDRecursive(id));
+		auto sprite = static_cast<CCSprite*>(this->getChildByIDRecursive(id));
 		if (sprite) sprite->setTexture(shinyEndScreenTexture1);
 	}
 
 	void setButtonTexture(const char* id, CCTexture2D* texture){
-		auto button = typeinfo_cast<CCMenuItemSpriteExtra*>(this->getChildByIDRecursive(id));
+		auto button = static_cast<CCMenuItemSpriteExtra*>(this->getChildByIDRecursive(id));
 		if (button){
-			auto sprite = typeinfo_cast<CCSprite*>(button->getNormalImage());
+			auto sprite = static_cast<CCSprite*>(button->getNormalImage());
 			if (sprite) sprite->setTexture(texture);
 		}		
 	}
