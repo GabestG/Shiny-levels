@@ -1,5 +1,5 @@
 {
-	"geode": "6.0.0-beta.1",
+	"geode": "6.0.0",
 	"gd": {
 		"win": "2.2091",
 		"android": "2.2091",
@@ -9,9 +9,15 @@
 	"id": "gabest.shiny-levels",
 	"name": "Shiny levels",
 	"version": "v1.0.0",
-	"developer": "Gabest",
+	"developers": ["Gabest", "cassidy"],
 	"description": "A mod that adds shiny hunting to GD",
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
+	},
+	"resources": {
+		"sprites": [
+			"resources/shiny_GJ_GameSheet03.png",
+			"resources/shiny_GJ_GameSheet04.png"
+		]
 	}
 }

@@ -7,10 +7,12 @@ using namespace std;
 #include <Geode/modify/GameObject.hpp>
 #include <Geode/modify/CCSprite.hpp>
 #include <Geode/modify/GJGroundLayer.hpp>
-#include <cstdlib>
+#include <Geode/modify/EndLevelLayer.hpp>
 
 bool shinyLevel = false;
 float hueShift = 200;
+CCTexture2D* shinyEndScreenTexture1 = nullptr;
+CCTexture2D* shinyEndScreenTexture2 = nullptr;
 
 ccColor3B shiftHue(ccColor3B color){
 	float r = color.r / 255.f;
@@ -68,7 +70,7 @@ ccColor3B shiftHue(ccColor3B color){
 	};
 }
 
-class $modify(MyGameObject, GameObject) {
+class $modify(GameObject) {
 	void setObjectColor(ccColor3B const& color) {
 		if (shinyLevel == true){
 			GameObject::setObjectColor(shiftHue(color));
@@ -85,7 +87,7 @@ class $modify(MyGameObject, GameObject) {
     }
 };
 
-class $modify(MyCCSprite, CCSprite){
+class $modify(CCSprite){
 
 	bool changeGrounds(auto groundLayer, const ccColor3B& color){
 		if (!groundLayer) return false;
@@ -144,11 +146,12 @@ class $modify(MyCCSprite, CCSprite){
 				return;
 			}
 		}
+
 		CCSprite::setColor(color);
 	}
 };
 
-class $modify(MyPlayLayer, PlayLayer){
+class $modify(PlayLayer){
 	bool init(GJGameLevel* level, bool dontCreateObjects) {
 
 		if (!PlayLayer::init(level, dontCreateObjects)) return false;
@@ -159,7 +162,7 @@ class $modify(MyPlayLayer, PlayLayer){
 	}
 
 	void ShinyRandomizer(){
-		int randomNum = rand() % 2;
+		int randomNum = rand() % 3;
 
 		if (randomNum == 1){
 			log::info("number:{}", randomNum);
@@ -178,3 +181,42 @@ class $modify(MyPlayLayer, PlayLayer){
 		shinyLevel = false;
 	}
 };
+
+class $modify(EndLevelLayer) {
+
+	void setSpriteTexture(const char* id){
+		auto sprite = typeinfo_cast<CCSprite*>(this->getChildByIDRecursive(id));
+		if (sprite) sprite->setTexture(shinyEndScreenTexture1);
+	}
+
+	void setButtonTexture(const char* id, CCTexture2D* texture){
+		auto button = typeinfo_cast<CCMenuItemSpriteExtra*>(this->getChildByIDRecursive(id));
+		if (button){
+			auto sprite = typeinfo_cast<CCSprite*>(button->getNormalImage());
+			if (sprite) sprite->setTexture(texture);
+		}		
+	}
+
+    void customSetup() {
+        EndLevelLayer::customSetup();
+
+        if (!shinyLevel || !shinyEndScreenTexture1 || !shinyEndScreenTexture2) return;
+
+		setSpriteTexture("left-border");
+		setSpriteTexture("right-border");
+		setSpriteTexture("top-border");
+		setSpriteTexture("bottom-border");
+		setSpriteTexture("level-complete-text");
+
+		setButtonTexture("retry-button", shinyEndScreenTexture1);
+		setButtonTexture("exit-button", shinyEndScreenTexture1);
+		setButtonTexture("edit-button", shinyEndScreenTexture1);
+		setButtonTexture("leaderboard-button", shinyEndScreenTexture1);
+		setButtonTexture("death-tracker-button", shinyEndScreenTexture2);
+    }
+};
+
+$on_mod(Loaded){
+	shinyEndScreenTexture1 = CCTextureCache::sharedTextureCache()->addImage("shiny_GJ_GameSheet03.png"_spr, false);
+	shinyEndScreenTexture2 = CCTextureCache::sharedTextureCache()->addImage("shiny_GJ_GameSheet04.png"_spr, false);
+}
