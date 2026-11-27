@@ -17,7 +17,9 @@
 	"resources": {
 		"sprites": [
 			"resources/shiny_GJ_GameSheet03.png",
-			"resources/shiny_GJ_GameSheet04.png"
+			"resources/shiny_GJ_GameSheet04.png",
+			"resources/golden_GJ_gradientBG.png",
+			"resources/rainbow_GJ_gradientBG.png"
 		]
 	}
 }

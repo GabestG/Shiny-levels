@@ -8,11 +8,23 @@ using namespace std;
 #include <Geode/modify/CCSprite.hpp>
 #include <Geode/modify/GJGroundLayer.hpp>
 #include <Geode/modify/EndLevelLayer.hpp>
+#include <Geode/modify/LevelInfoLayer.hpp>
 
 bool shinyLevel = false;
 float hueShift = 200;
 CCTexture2D* shinyEndScreenTexture1 = nullptr;
 CCTexture2D* shinyEndScreenTexture2 = nullptr;
+CCTexture2D* shinyBackgroundTexture = nullptr;
+
+void saveShinyLevel(int levelID){
+	auto completedShinyLevels = Mod::get()->getSavedValue<vector<int>>("completed-shiny-levels", {});
+
+	if (find(completedShinyLevels.begin(), completedShinyLevels.end(), levelID) == completedShinyLevels.end()){
+		completedShinyLevels.push_back(levelID);
+	}
+
+	Mod::get()->setSavedValue("completed-shiny-levels", completedShinyLevels);
+}
 
 ccColor3B shiftHue(ccColor3B color){
 	float r = color.r / 255.f;
@@ -180,13 +192,45 @@ class $modify(PlayLayer){
 		PlayLayer::onQuit();
 		shinyLevel = false;
 	}
+
+	void levelComplete() {
+		if (shinyLevel == true){
+			int levelID = static_cast<int>(PlayLayer::get()->m_level->m_levelID);
+
+			if (levelID){
+				saveShinyLevel(levelID);	
+			}
+		}
+		PlayLayer::levelComplete();
+	}
+};
+
+class $modify(LevelInfoLayer){
+	bool init(GJGameLevel* level, bool challenge) {
+		if (!LevelInfoLayer::init(level, challenge)) return false;
+		
+		auto completedLevels = Mod::get()->getSavedValue<vector<int>>("completed-shiny-levels", {});
+		auto levelID = static_cast<int>(level->m_levelID);
+		
+		if (levelID){
+			if (find(completedLevels.begin(), completedLevels.end(), levelID) != completedLevels.end()){
+				auto backgroundSprite = static_cast<CCSprite*>(this->getChildByIDRecursive("background"));
+				if (backgroundSprite) {
+					backgroundSprite->setTexture(shinyBackgroundTexture);
+					backgroundSprite->setColor(ccWHITE);
+				}
+			}
+		}
+
+		return true;
+	}
 };
 
 class $modify(EndLevelLayer) {
 
-	void setSpriteTexture(const char* id){
+	void setSpriteTexture(const char* id, CCTexture2D* texture){
 		auto sprite = static_cast<CCSprite*>(this->getChildByIDRecursive(id));
-		if (sprite) sprite->setTexture(shinyEndScreenTexture1);
+		if (sprite) sprite->setTexture(texture);
 	}
 
 	void setButtonTexture(const char* id, CCTexture2D* texture){
@@ -202,11 +246,11 @@ class $modify(EndLevelLayer) {
 
         if (!shinyLevel || !shinyEndScreenTexture1 || !shinyEndScreenTexture2) return;
 
-		setSpriteTexture("left-border");
-		setSpriteTexture("right-border");
-		setSpriteTexture("top-border");
-		setSpriteTexture("bottom-border");
-		setSpriteTexture("level-complete-text");
+		setSpriteTexture("left-border", shinyEndScreenTexture1);
+		setSpriteTexture("right-border", shinyEndScreenTexture1);
+		setSpriteTexture("top-border", shinyEndScreenTexture1);
+		setSpriteTexture("bottom-border", shinyEndScreenTexture1);
+		setSpriteTexture("level-complete-text", shinyEndScreenTexture1);
 
 		setButtonTexture("retry-button", shinyEndScreenTexture1);
 		setButtonTexture("exit-button", shinyEndScreenTexture1);
@@ -219,4 +263,5 @@ class $modify(EndLevelLayer) {
 $on_mod(Loaded){
 	shinyEndScreenTexture1 = CCTextureCache::sharedTextureCache()->addImage("shiny_GJ_GameSheet03.png"_spr, false);
 	shinyEndScreenTexture2 = CCTextureCache::sharedTextureCache()->addImage("shiny_GJ_GameSheet04.png"_spr, false);
+	shinyBackgroundTexture = CCTextureCache::sharedTextureCache()->addImage("golden_GJ_gradientBG.png"_spr, false);
 }
